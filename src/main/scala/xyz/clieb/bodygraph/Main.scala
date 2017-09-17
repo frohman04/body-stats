@@ -1,5 +1,6 @@
 package xyz.clieb.bodygraph
 
+import java.io.IOException
 import java.nio.file.{Path, Paths}
 import java.time.{LocalDate, ZoneId}
 
@@ -14,6 +15,7 @@ object Main {
   def main(args: Array[String]): Unit = {
     val main = new Main()
     val records = main.readFile(Paths.get("C:", "Users", "Chris", "My Tresors", "Official Documents", "frohman", "Body Tracker.xlsx"))
+    main.validateFile(records)
     val outFile = main.drawWeightGraph(records)
     println(outFile)
   }
@@ -41,6 +43,22 @@ class Main {
     } match {
       case Success(value) => value
       case Failure(e) => throw e
+    }
+  }
+
+  def validateFile(records: Seq[Record]): Unit = {
+    val errors = (1 until records.size)
+      .map(idx => {
+        if (records(idx - 1).date.compareTo(records(idx).date) >= 0) {
+          Some(s"Date for row ${idx - 1} (${records(idx - 1).date}) is the same or later " +
+            s"than the date for row ${idx} (${records(idx).date}")
+        } else {
+          None
+        }
+      })
+      .filter(_.isDefined)
+    if (errors.nonEmpty) {
+      throw new IOException(s"Found issues in data read from file: \n${errors.mkString("\n")}")
     }
   }
 
