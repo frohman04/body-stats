@@ -4,6 +4,7 @@ version := "0.1"
 
 scalaVersion := "2.12.3"
 
+libraryDependencies += "com.github.scopt" % "scopt_2.12" % "3.7.0"
 libraryDependencies += "org.apache.poi" % "poi-ooxml" % "3.16"
 // need to build by-hand to get version that works w/ Scala 2.12
 //   * add 2.12.3 as additional cross version

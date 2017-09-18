@@ -1,27 +1,55 @@
 package xyz.clieb.bodygraph
 
-import java.io.IOException
-import java.nio.file.{Path, Paths}
-import java.time.{LocalDate, ZoneId}
-
-import co.theasi.plotly._
-import co.theasi.plotly.writer.{FileOptions, PlotFile}
 import org.apache.poi.ss.usermodel.WorkbookFactory
-import xyz.clieb.bodygraph.Closable._
+
+import java.io.{File, IOException}
+import java.nio.file.Path
+import java.time.{LocalDate, ZoneId}
 
 import scala.util.{Failure, Success}
 
+import co.theasi.plotly._
+import co.theasi.plotly.writer.{FileOptions, PlotFile}
+import scopt.OptionParser
+import xyz.clieb.bodygraph.Closable._
+
 object Main {
   def main(args: Array[String]): Unit = {
-    val main = new Main()
-    val records = main.readFile(Paths.get("C:", "Users", "Chris", "My Tresors", "Official Documents", "frohman", "Body Tracker.xlsx"))
-    main.validateFile(records)
-    val outFile = main.drawWeightGraph(records)
-    println(outFile)
+    parser.parse(args, Options()) match {
+      case Some(s) => new Main().run(s.path.get.toPath)
+      case None =>
+    }
+  }
+
+  case class Options(path: Option[File] = None)
+
+  val parser = new OptionParser[Options]("body-graphs") {
+    head("body-graphs", "0.1")
+
+    arg[File]("<file>").action((x, c) =>
+      c.copy(path = Some(x)))
+
+    checkConfig(c =>
+      if (c.path.isEmpty) {
+        failure("Must specify the weight tracker file")
+      } else if (!c.path.get.exists()) {
+        failure(s"The input file does not exist: ${c.path.get.getAbsolutePath}")
+      } else if (!c.path.get.isFile) {
+        failure(s"The input file is not a file: ${c.path.get.getAbsolutePath}")
+      } else {
+        success
+      })
   }
 }
 
 class Main {
+  def run(path: Path): Unit = {
+    val records = readFile(path)
+    validateFile(records)
+    val outFile = drawWeightGraph(records)
+    println(outFile)
+  }
+
   def readFile(path: Path): Seq[Record] = {
     println(s"Reading data from file: ${path.toString}")
 
