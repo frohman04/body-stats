@@ -92,31 +92,40 @@ class Main {
 
   def drawWeightGraph(records: Seq[Record]): PlotFile = {
     val relRecords = records.filter(_.weight.isDefined)
-    val sevenDayAverage = records.map(record => {
-      val lowerBound = record.date.minusDays(7)
-      val upperBound = record.date
 
-      val sevenDays = records
-        .filter(record => lowerBound.compareTo(record.date) <= 0 && record.date.compareTo(upperBound) <= 0)
-        .map(record => record.weight.get)
-      (record.date, (sevenDays.sum / sevenDays.size).toDouble)
-    })
+    val weights = weightSeries(relRecords)
+    val sevenDayAverage = sevenDayAverageSeries(relRecords)
 
     val plot = Plot()
       .withScatter(
-        relRecords.map(_.date.toString),
-        relRecords.map(_.weight.get.toDouble),
+        weights.map(_._1),
+        weights.map(_._2),
         ScatterOptions()
           .name("Weight")
           .mode(ScatterMode.Marker))
       .withScatter(
-        sevenDayAverage.map(_._1.toString),
+        sevenDayAverage.map(_._1),
         sevenDayAverage.map(_._2),
         ScatterOptions()
           .name("7-day average"))
       .xAxisOptions(AxisOptions().title("Date"))
       .yAxisOptions(AxisOptions().title("Weight (lbs)"))
     draw(plot, "weight", FileOptions(overwrite = true))
+  }
+
+  private def weightSeries(records: Seq[Record]): Seq[(String, Double)] =
+    records.map(record => (record.date.toString, record.weight.get.toDouble))
+
+  private def sevenDayAverageSeries(records: Seq[Record]): Seq[(String, Double)] = {
+    records.map(record => {
+      val lowerBound = record.date.minusDays(7)
+      val upperBound = record.date
+
+      val sevenDays = records
+          .filter(record => lowerBound.compareTo(record.date) <= 0 && record.date.compareTo(upperBound) <= 0)
+          .map(record => record.weight.get)
+      (record.date.toString, (sevenDays.sum / sevenDays.size).toDouble)
+    })
   }
 }
 
