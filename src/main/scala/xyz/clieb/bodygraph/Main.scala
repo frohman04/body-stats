@@ -110,10 +110,10 @@ class Main {
       weightSeries(relRecords)
     }
     val rollingAverage = timed("Calculate average series") {
-      averageSeries(relRecords)
+      averageSeries(relRecords, 30)
     }
     val loessSR = timed("Calculate LOESS (SimpleLinear) curve series") {
-      loessSimpleRegressionSeries(relRecords, 10)
+      loessSimpleRegressionSeries(relRecords, 30)
     }
 
     val plot = Plot()
@@ -141,10 +141,10 @@ class Main {
   private def weightSeries(records: Seq[Record]): Seq[(String, Double)] =
     records.map(record => (record.date.toString, record.weight.get.toDouble))
 
-  private def averageSeries(records: Seq[Record]): Seq[(String, Double)] = {
+  private def averageSeries(records: Seq[Record], numDays: Int): Seq[(String, Double)] = {
     records.map(record => {
-      val lowerBound = record.date.minusDays(7)
-      val upperBound = record.date
+      val lowerBound = record.date.minusDays(numDays / 2)
+      val upperBound = record.date.plusDays((numDays - 1) / 2)
 
       val windowDays = records
           .filter(record => lowerBound.compareTo(record.date) <= 0 && record.date.compareTo(upperBound) <= 0)
