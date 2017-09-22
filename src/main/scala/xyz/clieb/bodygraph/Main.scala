@@ -1,5 +1,6 @@
 package xyz.clieb.bodygraph
 
+import org.apache.commons.math3.stat.regression.SimpleRegression
 import org.apache.poi.ss.usermodel.WorkbookFactory
 
 import java.io.{File, IOException}
@@ -111,6 +112,9 @@ class Main {
     val sevenDayAverage = timed("Calculate seven day average series") {
       sevenDayAverageSeries(relRecords)
     }
+    val loess = timed("Calculate LOESS curve series") {
+      loessSeries(relRecords, 10)
+    }
 
     val plot = Plot()
       .withScatter(
@@ -124,6 +128,11 @@ class Main {
         sevenDayAverage.map(_._2),
         ScatterOptions()
           .name("7-day average"))
+      .withScatter(
+        loess.map(_._1),
+        loess.map(_._2),
+        ScatterOptions()
+            .name("LOESS"))
       .xAxisOptions(AxisOptions().title("Date"))
       .yAxisOptions(AxisOptions().title("Weight (lbs)"))
     draw(plot, "weight", FileOptions(overwrite = true))
@@ -142,6 +151,30 @@ class Main {
           .map(record => record.weight.get)
       (record.date.toString, (sevenDays.sum / sevenDays.size).toDouble)
     })
+  }
+
+  private def loessSeries(records: Seq[Record], numDays: Int): Seq[(String, Double)] = {
+    val baseDate = records.map(_.date).min
+    records
+        .map(record => {
+          val lowerBound = record.date.minusDays(numDays / 2)
+          val upperBound = record.date.plusDays((numDays - 1) / 2)
+
+          val sevenDays = records
+              .filter(record => lowerBound.compareTo(record.date) <= 0 && record.date.compareTo(upperBound) <= 0)
+              .map(record => (record.date.toEpochDay - baseDate.toEpochDay, record.weight.get))
+
+          val regression = new SimpleRegression()
+          sevenDays.foreach(day => regression.addData(day._1, day._2))
+          (
+              record.date.toString,
+              regression.getIntercept + regression.getSlope * (record.date.toEpochDay - baseDate.toEpochDay)
+          )
+        })
+  }
+
+  implicit def orderedLocalDate: Ordering[LocalDate] = new Ordering[LocalDate] {
+    def compare(x: LocalDate, y: LocalDate): Int = x compareTo y
   }
 }
 

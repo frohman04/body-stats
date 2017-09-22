@@ -15,6 +15,7 @@ libraryDependencies ++= Seq(
   "com.typesafe.scala-logging" %% "scala-logging" % "3.7.2",
 
   "com.github.scopt" %% "scopt" % "3.7.0",
+  "org.apache.commons" % "commons-math3" % "3.6.1",
   "org.apache.poi" % "poi-ooxml" % "3.16",
 
   // need to build by-hand to get version that works w/ Scala 2.12
