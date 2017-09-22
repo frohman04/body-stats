@@ -12,6 +12,7 @@ import co.theasi.plotly._
 import co.theasi.plotly.writer.{FileOptions, PlotFile}
 import scopt.OptionParser
 import xyz.clieb.bodygraph.Closable._
+import xyz.clieb.bodygraph.Timed._
 
 object Main {
   def main(args: Array[String]): Unit = {
@@ -44,15 +45,13 @@ object Main {
 
 class Main {
   def run(path: Path): Unit = {
-    val records = readFile(path)
-    validateFile(records)
-    val outFile = drawWeightGraph(records)
+    val records = timed(s"Reading data from file: ${path}") { readFile(path) }
+    timed("Validating read data") { validateFile(records) }
+    val outFile = timed("Drawing graph") { drawWeightGraph(records) }
     println(outFile)
   }
 
   def readFile(path: Path): Seq[Record] = {
-    println(s"Reading data from file: ${path.toString}")
-
     val tmpPath = Files.createTempFile("body-data", "")
     Files.copy(
       path,
@@ -106,8 +105,12 @@ class Main {
   def drawWeightGraph(records: Seq[Record]): PlotFile = {
     val relRecords = records.filter(_.weight.isDefined)
 
-    val weights = weightSeries(relRecords)
-    val sevenDayAverage = sevenDayAverageSeries(relRecords)
+    val weights = timed("Calculate weight series") {
+      weightSeries(relRecords)
+    }
+    val sevenDayAverage = timed("Calculate seven day average series") {
+      sevenDayAverageSeries(relRecords)
+    }
 
     val plot = Plot()
       .withScatter(
