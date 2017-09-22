@@ -109,11 +109,11 @@ class Main {
     val weights = timed("Calculate weight series") {
       weightSeries(relRecords)
     }
-    val sevenDayAverage = timed("Calculate seven day average series") {
-      sevenDayAverageSeries(relRecords)
+    val rollingAverage = timed("Calculate average series") {
+      averageSeries(relRecords)
     }
-    val loess = timed("Calculate LOESS curve series") {
-      loessSeries(relRecords, 10)
+    val loessSR = timed("Calculate LOESS (SimpleLinear) curve series") {
+      loessSimpleRegressionSeries(relRecords, 10)
     }
 
     val plot = Plot()
@@ -124,15 +124,15 @@ class Main {
           .name("Weight")
           .mode(ScatterMode.Marker))
       .withScatter(
-        sevenDayAverage.map(_._1),
-        sevenDayAverage.map(_._2),
+        rollingAverage.map(_._1),
+        rollingAverage.map(_._2),
         ScatterOptions()
-          .name("7-day average"))
+          .name("Rolling average"))
       .withScatter(
-        loess.map(_._1),
-        loess.map(_._2),
+        loessSR.map(_._1),
+        loessSR.map(_._2),
         ScatterOptions()
-            .name("LOESS"))
+          .name("LOESS (SR)"))
       .xAxisOptions(AxisOptions().title("Date"))
       .yAxisOptions(AxisOptions().title("Weight (lbs)"))
     draw(plot, "weight", FileOptions(overwrite = true))
@@ -141,34 +141,34 @@ class Main {
   private def weightSeries(records: Seq[Record]): Seq[(String, Double)] =
     records.map(record => (record.date.toString, record.weight.get.toDouble))
 
-  private def sevenDayAverageSeries(records: Seq[Record]): Seq[(String, Double)] = {
+  private def averageSeries(records: Seq[Record]): Seq[(String, Double)] = {
     records.map(record => {
       val lowerBound = record.date.minusDays(7)
       val upperBound = record.date
 
-      val sevenDays = records
+      val windowDays = records
           .filter(record => lowerBound.compareTo(record.date) <= 0 && record.date.compareTo(upperBound) <= 0)
           .map(record => record.weight.get)
-      (record.date.toString, (sevenDays.sum / sevenDays.size).toDouble)
+      (record.date.toString, (windowDays.sum / windowDays.size).toDouble)
     })
   }
 
-  private def loessSeries(records: Seq[Record], numDays: Int): Seq[(String, Double)] = {
+  private def loessSimpleRegressionSeries(records: Seq[Record], numDays: Int): Seq[(String, Double)] = {
     val baseDate = records.map(_.date).min
     records
         .map(record => {
           val lowerBound = record.date.minusDays(numDays / 2)
           val upperBound = record.date.plusDays((numDays - 1) / 2)
 
-          val sevenDays = records
+          val windowDays = records
               .filter(record => lowerBound.compareTo(record.date) <= 0 && record.date.compareTo(upperBound) <= 0)
               .map(record => (record.date.toEpochDay - baseDate.toEpochDay, record.weight.get))
 
           val regression = new SimpleRegression()
-          sevenDays.foreach(day => regression.addData(day._1, day._2))
+          windowDays.foreach(day => regression.addData(day._1, day._2))
           (
               record.date.toString,
-              regression.getIntercept + regression.getSlope * (record.date.toEpochDay - baseDate.toEpochDay)
+              regression.predict(record.date.toEpochDay - baseDate.toEpochDay)
           )
         })
   }
