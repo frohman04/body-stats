@@ -3,7 +3,7 @@ package xyz.clieb.bodygraph
 import org.apache.poi.ss.usermodel.WorkbookFactory
 
 import java.io.{File, IOException}
-import java.nio.file.Path
+import java.nio.file.{Files, Path, StandardCopyOption}
 import java.time.{LocalDate, ZoneId}
 
 import scala.util.{Failure, Success}
@@ -53,25 +53,38 @@ class Main {
   def readFile(path: Path): Seq[Record] = {
     println(s"Reading data from file: ${path.toString}")
 
-    closable(WorkbookFactory.create(path.toFile)) { workbook =>
-      val sheet = workbook.getSheetAt(0)
-      (sheet.getFirstRowNum + 1 to sheet.getLastRowNum)
-        .map { case rowNum: Int =>
-          val row = sheet.getRow(rowNum)
-          Record(
-            row.getCell(0).getDateCellValue.toInstant.atZone(ZoneId.systemDefault()).toLocalDate,
-            Option(row.getCell(2)).map(_.getNumericCellValue.toFloat),
-            Option(row.getCell(3)).map(_.getNumericCellValue.toFloat),
-            Option(row.getCell(4)).map(_.getNumericCellValue.toFloat),
-            Option(row.getCell(5)).map(_.getNumericCellValue.toFloat),
-            Option(row.getCell(6)).map(_.getNumericCellValue.toFloat),
-            Option(row.getCell(7)).map(_.getNumericCellValue.toFloat),
-          )
-        }
-    } match {
-      case Success(value) => value
-      case Failure(e) => throw e
+    val tmpPath = Files.createTempFile("body-data", "")
+    Files.copy(
+      path,
+      tmpPath,
+      StandardCopyOption.REPLACE_EXISTING,
+      StandardCopyOption.COPY_ATTRIBUTES)
+
+    val records = try {
+      closable(WorkbookFactory.create(tmpPath.toFile)) { workbook =>
+        val sheet = workbook.getSheetAt(0)
+        (sheet.getFirstRowNum + 1 to sheet.getLastRowNum)
+            .map { case rowNum: Int =>
+              val row = sheet.getRow(rowNum)
+              Record(
+                row.getCell(0).getDateCellValue.toInstant.atZone(ZoneId.systemDefault()).toLocalDate,
+                Option(row.getCell(2)).map(_.getNumericCellValue.toFloat),
+                Option(row.getCell(3)).map(_.getNumericCellValue.toFloat),
+                Option(row.getCell(4)).map(_.getNumericCellValue.toFloat),
+                Option(row.getCell(5)).map(_.getNumericCellValue.toFloat),
+                Option(row.getCell(6)).map(_.getNumericCellValue.toFloat),
+                Option(row.getCell(7)).map(_.getNumericCellValue.toFloat),
+              )
+            }
+      } match {
+        case Success(value) => value
+        case Failure(e) => throw e
+      }
+    } finally {
+      Files.delete(tmpPath)
     }
+
+    records
   }
 
   def validateFile(records: Seq[Record]): Unit = {
