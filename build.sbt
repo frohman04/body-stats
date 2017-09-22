@@ -4,11 +4,24 @@ version := "0.1"
 
 scalaVersion := "2.12.3"
 
-libraryDependencies += "com.github.scopt" % "scopt_2.12" % "3.7.0"
-libraryDependencies += "org.apache.poi" % "poi-ooxml" % "3.16"
-// need to build by-hand to get version that works w/ Scala 2.12
-//   * add 2.12.3 as additional cross version
-//   * upgrade to scalaj-http 2.3.0
-//   * upgrade to json4s-native 3.5.0
-//   * upgrade to scalatest 3.0.4
-libraryDependencies += "co.theasi" %% "plotly" % "0.2.0"
+val slf4jVersion = "1.7.25"
+
+libraryDependencies ++= Seq(
+  "org.slf4j" % "slf4j-api" % slf4jVersion,
+  "org.slf4j" % "log4j-over-slf4j" % slf4jVersion,
+  "org.slf4j" % "jcl-over-slf4j" % slf4jVersion,
+  "org.slf4j" % "jul-to-slf4j" % slf4jVersion,
+  "ch.qos.logback" % "logback-classic" % "1.2.3" % "runtime",
+  "com.typesafe.scala-logging" %% "scala-logging" % "3.7.2",
+
+  "com.github.scopt" %% "scopt" % "3.7.0",
+  "org.apache.poi" % "poi-ooxml" % "3.16",
+
+  // need to build by-hand to get version that works w/ Scala 2.12
+  //   * set the SBT version to 0.13.16
+  //   * add 2.12.3 as additional cross version
+  //   * upgrade to scalaj-http 2.3.0
+  //   * upgrade to json4s-native 3.5.0
+  //   * upgrade to scalatest 3.0.4
+  "co.theasi" %% "plotly" % "0.2.0"
+)
