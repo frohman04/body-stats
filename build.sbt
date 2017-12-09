@@ -2,7 +2,7 @@ name := "body-graphs"
 
 version := "0.1"
 
-scalaVersion := "2.12.3"
+scalaVersion := "2.12.4"
 
 val slf4jVersion = "1.7.25"
 
@@ -16,7 +16,7 @@ libraryDependencies ++= Seq(
 
   "com.github.scopt" %% "scopt" % "3.7.0",
   "org.apache.commons" % "commons-math3" % "3.6.1",
-  "org.apache.poi" % "poi-ooxml" % "3.16",
+  "org.apache.poi" % "poi-ooxml" % "3.17",
 
   // need to build by-hand to get version that works w/ Scala 2.12
   //   * set the SBT version to 0.13.16
