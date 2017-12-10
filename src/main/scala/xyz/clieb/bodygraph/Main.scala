@@ -9,8 +9,10 @@ import java.time.{LocalDate, ZoneId}
 
 import scala.util.{Failure, Success}
 
-import co.theasi.plotly._
-import co.theasi.plotly.writer.{FileOptions, PlotFile}
+import plotly.Plotly._
+import plotly._
+import plotly.element._
+import plotly.layout._
 import scopt.OptionParser
 import xyz.clieb.bodygraph.Closable._
 import xyz.clieb.bodygraph.Timed._
@@ -103,7 +105,7 @@ class Main {
     }
   }
 
-  def drawWeightGraph(records: Seq[Record]): PlotFile = {
+  def drawWeightGraph(records: Seq[Record]): Unit = {
     val relRecords = records.filter(_.weight.isDefined)
 
     val weights = timed("Calculate weight series") {
@@ -116,26 +118,29 @@ class Main {
       loessSimpleRegressionSeries(relRecords, 30)
     }
 
-    val plot = Plot()
-      .withScatter(
+    Seq(
+      Scatter(
         weights.map(_._1),
         weights.map(_._2),
-        ScatterOptions()
-          .name("Weight")
-          .mode(ScatterMode.Marker))
-      .withScatter(
+        name = "Weight",
+        mode = ScatterMode(ScatterMode.Markers)
+      ),
+      Scatter(
         rollingAverage.map(_._1),
         rollingAverage.map(_._2),
-        ScatterOptions()
-          .name("Rolling average"))
-      .withScatter(
+        name = "Rolling average"
+      ),
+      Scatter(
         loessSR.map(_._1),
         loessSR.map(_._2),
-        ScatterOptions()
-          .name("LOESS (SR)"))
-      .xAxisOptions(AxisOptions().title("Date"))
-      .yAxisOptions(AxisOptions().title("Weight (lbs)"))
-    draw(plot, "weight", FileOptions(overwrite = true))
+        name = "LOESS (SR)"
+      )
+    ).plot(
+      path = "weight.html",
+      openInBrowser = true,
+      xaxis = Axis(title = "Date"),
+      yaxis = Axis(title = "Weight (lbs)")
+    )
   }
 
   private def weightSeries(records: Seq[Record]): Seq[(String, Double)] =
