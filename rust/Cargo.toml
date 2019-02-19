@@ -5,4 +5,5 @@ authors = ["Chris Lieb <chris.lieb@gmail.com>"]
 edition = "2018"
 
 [dependencies]
+clap = "2.32.0"
 calamine = "0.15.3"
