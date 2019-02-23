@@ -5,5 +5,8 @@ authors = ["Chris Lieb <chris.lieb@gmail.com>"]
 edition = "2018"
 
 [dependencies]
-clap = "2.32.0"
-calamine = "0.15.3"
+calamine = "~0.15"
+chrono = { version = "~0.4", features = [ "serde" ] }
+clap = "~2.32"
+serde = { version = "~1.0", features = [ "derive" ] }
+tempfile = "~3.0"
