@@ -48,18 +48,18 @@ fn read_file(path: &Path) -> Result<Vec<Record>, ReadError> {
     let mut workbook: Xlsx<_> = open_workbook(&temp_file)?;
     let range = workbook
         .worksheet_range("Weight")
-        .ok_or(DeError::Custom("Unable to find sheet Weight".to_string()))??;
+        .ok_or_else(|| DeError::Custom("Unable to find sheet Weight".to_string()))??;
 
     let iter = RangeDeserializerBuilder::new().from_range(&range)?;
 
     let (records, errors): (Vec<_>, Vec<_>) = iter
-        .map(|row| row.map(|x| Record::from(x)).map_err(|x| ReadError::from(x)))
+        .map(|row| row.map(Record::from).map_err(ReadError::from))
         .partition(Result::is_ok);
     let records: Vec<Record> = records.into_iter().map(Result::unwrap).collect();
     let errors: Vec<ReadError> = errors.into_iter().map(Result::unwrap_err).collect();
 
     remove_file(temp_file)?;
-    if errors.len() == 0 {
+    if errors.is_empty() {
         Result::Ok(records)
     } else {
         Result::Err(errors.into_iter().next().unwrap())
