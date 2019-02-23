@@ -1,9 +1,6 @@
 extern crate calamine;
 use calamine::{open_workbook, DeError, RangeDeserializerBuilder, Reader, Xlsx, XlsxError};
 
-extern crate chrono;
-use chrono::{Date, Utc};
-
 extern crate clap;
 use clap::{App, Arg};
 
@@ -31,8 +28,16 @@ fn main() {
         panic!("Argument <file> ({}) is not a file", raw_input_path);
     }
 
-    let records = read_file(&input_path);
     println!("{}", raw_input_path);
+
+    let records = read_file(&input_path);
+    if records.is_err() {
+        panic!(records.unwrap_err());
+    } else {
+        for record in records.unwrap() {
+            println!("{:?}", record);
+        }
+    }
 }
 
 /// Read the *.xlsx file and convert it into records.
@@ -45,25 +50,23 @@ fn read_file(path: &Path) -> Result<Vec<Record>, ReadError> {
         .worksheet_range("Weight")
         .ok_or(DeError::Custom("Unable to find sheet Weight".to_string()))??;
 
-    let mut iter = RangeDeserializerBuilder::new().from_range(&range)?;
+    let iter = RangeDeserializerBuilder::new().from_range(&range)?;
 
-    let records = iter.map(|row| row.map(|x| Record::from(x)));
-
-    let errors: Vec<ReadError> = records
-        .filter(|x| x.is_err())
-        .map(|x| ReadError::from(x.unwrap_err()))
-        .collect();
-    let out = if errors.len() == 0 {
-        Result::Ok(records.map(|x| x.unwrap()).collect())
-    } else {
-        Result::Err(ReadError::from(errors[0]))
-    };
+    let (records, errors): (Vec<_>, Vec<_>) = iter
+        .map(|row| row.map(|x| Record::from(x)).map_err(|x| ReadError::from(x)))
+        .partition(Result::is_ok);
+    let records: Vec<Record> = records.into_iter().map(Result::unwrap).collect();
+    let errors: Vec<ReadError> = errors.into_iter().map(Result::unwrap_err).collect();
 
     remove_file(temp_file)?;
-
-    out
+    if errors.len() == 0 {
+        Result::Ok(records)
+    } else {
+        Result::Err(errors.into_iter().next().unwrap())
+    }
 }
 
+#[derive(Debug)]
 enum ReadError {
     Io { err: std::io::Error },
     Excel { err: XlsxError },
@@ -90,7 +93,7 @@ impl From<DeError> for ReadError {
 
 #[derive(Deserialize, Debug)]
 struct Record {
-    date: Date<Utc>,
+    date: i32,
     weight: Option<f32>,
     fat_weight: Option<f32>,
     pct_fat: Option<f32>,
