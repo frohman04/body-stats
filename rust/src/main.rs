@@ -32,7 +32,7 @@ fn main() {
 
     let records = read_file(&input_path);
     if records.is_err() {
-        panic!(records.unwrap_err());
+        panic!(format!("{:?}", records.unwrap_err()));
     } else {
         for record in records.unwrap() {
             println!("{:?}", record);
