@@ -53,9 +53,8 @@ fn read_file(path: &Path) -> Result<Vec<Record>, ReadError> {
         .worksheet_range("Weight")
         .ok_or_else(|| DeError::Custom("Unable to find sheet Weight".to_string()))??;
 
-    let mut iter = RangeDeserializerBuilder::new().from_range(&range)?;
+    let iter = RangeDeserializerBuilder::new().from_range(&range)?;
 
-    iter.next(); // skip first row
     let epoch = Local.ymd(1899, 12, 30);
     let (records, errors): (Vec<_>, Vec<_>) = iter
         .map(|row| {
