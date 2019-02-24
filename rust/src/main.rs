@@ -142,28 +142,43 @@ fn weight_raw_series(records: &Vec<Record>) -> Vec<DataPoint> {
 /// Calculate the data points for the rolling average weight series.
 fn weight_average_series(records: &Vec<Record>, num_days: i64) -> Vec<DataPoint> {
     let records: Vec<&Record> = records.into_iter().filter(|r| r.weight.is_some()).collect();
+
+    let mut lower_init = 0;
+
     records
         .iter()
         .map(|r| {
             let lower_bound = r.date - Duration::days(num_days / 2);
             let upper_bound = r.date + Duration::days((num_days - 1) / 2);
 
-            let window_days: Vec<f32> = records
-                .iter()
-                .filter_map(|r2| {
-                    if lower_bound.signed_duration_since(r2.date).num_days() <= 0
-                        && r2.date.signed_duration_since(upper_bound).num_days() <= 0
-                    {
-                        Some(r2.weight.unwrap())
-                    } else {
-                        None
-                    }
-                })
-                .collect();
+            let mut count: i32 = 0;
+            let mut sum: f32 = 0f32;
+
+            let mut i = lower_init;
+            while lower_bound
+                .signed_duration_since(records[i].date)
+                .num_days()
+                > 0
+            {
+                i += 1;
+            }
+            lower_init = i;
+
+            while i < records.len()
+                && records[i]
+                    .date
+                    .signed_duration_since(upper_bound)
+                    .num_days()
+                    <= 0
+            {
+                count += 1;
+                sum += records[i].weight.unwrap();
+                i += 1;
+            }
 
             DataPoint {
                 date: r.date.format("%Y-%m-%d").to_string(),
-                value: window_days.iter().sum::<f32>() / (window_days.len() as f32),
+                value: sum / (count as f32),
             }
         })
         .collect()
