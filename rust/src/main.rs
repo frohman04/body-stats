@@ -1,19 +1,16 @@
 extern crate calamine;
-use calamine::{open_workbook, DeError, RangeDeserializerBuilder, Reader, Xlsx, XlsxError};
-
 extern crate chrono;
-use chrono::prelude::*;
-
 extern crate clap;
-use clap::{App, Arg};
-
 extern crate tempfile;
-use tempfile::NamedTempFile;
-
 extern crate time;
+
+use calamine::{open_workbook, DeError, RangeDeserializerBuilder, Reader, Xlsx, XlsxError};
+use chrono::prelude::*;
+use clap::{App, Arg};
+use tempfile::NamedTempFile;
 use time::Duration;
 
-use std::fs::{copy, remove_file};
+use std::fs::{copy, remove_file, write};
 use std::path::Path;
 
 mod regression;
@@ -43,12 +40,7 @@ fn main() {
 
     let records = records.unwrap();
     validate_file(&records);
-    let raw_weights = weight_raw_series(&records);
-    let average_weights = weight_average_series(&records, 30);
-    let loess_weights = weight_loess_series(&records, 30);
-    for record in loess_weights {
-        println!("{:?}", record);
-    }
+    draw_weight_graph(&records);
 }
 
 /// Read the *.xlsx file and convert it into records.
@@ -128,6 +120,74 @@ fn validate_file(records: &Vec<Record>) -> () {
             errors.join("\n")
         ));
     }
+}
+
+/// Render a graph of weight data to HTML
+fn draw_weight_graph(records: &Vec<Record>) -> () {
+    let raw = weight_raw_series(records);
+    let average = weight_average_series(records, 30);
+    let loess = weight_loess_series(records, 30);
+
+    let raw_dates: Vec<&str> = raw.iter().map(|p| p.date.as_str()).collect();
+    let raw_values: Vec<String> = raw.iter().map(|p| p.value.to_string()).collect();
+    let average_dates: Vec<&str> = average.iter().map(|p| p.date.as_str()).collect();
+    let average_values: Vec<String> = average.iter().map(|p| p.value.to_string()).collect();
+    let loess_dates: Vec<&str> = loess.iter().map(|p| p.date.as_str()).collect();
+    let loess_values: Vec<String> = loess.iter().map(|p| p.value.to_string()).collect();
+
+    let html = format!(
+        "<html>
+    <head>
+        <title>Weight History</title>
+        <script src=\"https://cdn.plot.ly/plotly-1.41.3.min.js\"></script>
+    </head>
+    <body>
+        <div id=\"chart\"></div>
+        <script>
+            (function () {{
+                var data0 = {{
+                    \"name\": \"Weight\",
+                    \"x\": [\"{}\"],
+                    \"y\": [{}],
+                    \"mode\": \"markers\",
+                    \"type\": \"scatter\"
+                }};
+                var data1 = {{
+                    \"name\": \"Rolling Average\",
+                    \"x\": [\"{}\"],
+                    \"y\": [{}],
+                    \"type\": \"scatter\"
+                }};
+                var data2 = {{
+                    \"name\": \"LOESS (SR)\",
+                    \"x\": [\"{}\"],
+                    \"y\": [{}],
+                    \"type\": \"scatter\"
+                }};
+
+                var data = [data0, data1, data2];
+                var layout = {{
+                    \"yaxis\": {{
+                        \"title\": \"Weight (lbs)\"
+                    }},
+                    \"xaxis\": {{
+                        \"title\": \"Date\"
+                    }}
+                }};
+                Plotly.plot(\"chart\", data, layout);
+            }})();
+        </script>
+    </body>
+</html>",
+        raw_dates.join("\",\""),
+        raw_values.join(","),
+        average_dates.join("\",\""),
+        average_values.join(","),
+        loess_dates.join("\",\""),
+        loess_values.join(",")
+    );
+
+    write("weight.html", html).expect("Unable to write file");
 }
 
 /// Calculate the data points for the raw weight series.
