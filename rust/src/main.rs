@@ -16,6 +16,9 @@ use time::Duration;
 use std::fs::{copy, remove_file};
 use std::path::Path;
 
+mod regression;
+use regression::SimpleRegression;
+
 fn main() {
     let matches = App::new("body-graphs")
         .version("0.1")
@@ -42,7 +45,8 @@ fn main() {
     validate_file(&records);
     let raw_weights = weight_raw_series(&records);
     let average_weights = weight_average_series(&records, 30);
-    for record in average_weights {
+    let loess_weights = weight_loess_series(&records, 30);
+    for record in loess_weights {
         println!("{:?}", record);
     }
 }
@@ -133,7 +137,7 @@ fn weight_raw_series(records: &Vec<Record>) -> Vec<DataPoint> {
         .filter_map(|r| {
             r.weight.map(|w| DataPoint {
                 date: r.date.format("%Y-%m-%d").to_string(),
-                value: w,
+                value: w as f64,
             })
         })
         .collect()
@@ -152,7 +156,7 @@ fn weight_average_series(records: &Vec<Record>, num_days: i64) -> Vec<DataPoint>
             let upper_bound = r.date + Duration::days((num_days - 1) / 2);
 
             let mut count: i32 = 0;
-            let mut sum: f32 = 0f32;
+            let mut sum: f64 = 0f64;
 
             let mut i = lower_init;
             while lower_bound
@@ -172,13 +176,61 @@ fn weight_average_series(records: &Vec<Record>, num_days: i64) -> Vec<DataPoint>
                     <= 0
             {
                 count += 1;
-                sum += records[i].weight.unwrap();
+                sum += records[i].weight.unwrap() as f64;
                 i += 1;
             }
 
             DataPoint {
                 date: r.date.format("%Y-%m-%d").to_string(),
-                value: sum / (count as f32),
+                value: sum / (count as f64),
+            }
+        })
+        .collect()
+}
+
+/// Calculate the data points for the LOESS regression weight series.
+fn weight_loess_series(records: &Vec<Record>, num_days: i64) -> Vec<DataPoint> {
+    let records: Vec<&Record> = records.into_iter().filter(|r| r.weight.is_some()).collect();
+
+    let base_date = records.iter().map(|r| r.date).min().unwrap();
+    let mut lower_init = 0;
+
+    records
+        .iter()
+        .map(|r| {
+            let lower_bound = r.date - Duration::days(num_days / 2);
+            let upper_bound = r.date + Duration::days((num_days - 1) / 2);
+
+            let mut regression = SimpleRegression::new();
+
+            let mut i = lower_init;
+            while lower_bound
+                .signed_duration_since(records[i].date)
+                .num_days()
+                > 0
+            {
+                i += 1;
+            }
+            lower_init = i;
+
+            while i < records.len()
+                && records[i]
+                    .date
+                    .signed_duration_since(upper_bound)
+                    .num_days()
+                    <= 0
+            {
+                regression.add_data(
+                    records[i].date.signed_duration_since(base_date).num_days() as f64,
+                    records[i].weight.unwrap() as f64,
+                );
+                i += 1;
+            }
+
+            DataPoint {
+                date: r.date.format("%Y-%m-%d").to_string(),
+                value: regression
+                    .predict(r.date.signed_duration_since(base_date).num_days() as f64),
             }
         })
         .collect()
@@ -223,5 +275,5 @@ struct Record {
 #[derive(Debug)]
 struct DataPoint {
     date: String,
-    value: f32,
+    value: f64,
 }
