@@ -144,7 +144,8 @@ fn draw_weight_graph(records: &Vec<Record>) -> () {
     let loess_values: Vec<String> = loess.iter().map(|p| p.value.to_string()).collect();
 
     let html = format!(
-        "<html>
+        "<!DOCTYPE html>
+<html>
     <head>
         <title>Weight History</title>
         <script src=\"https://cdn.plot.ly/plotly-1.41.3.min.js\"></script>
