@@ -36,10 +36,12 @@ fn main() {
     let records = read_file(&input_path);
     if records.is_err() {
         panic!(format!("{:?}", records.unwrap_err()));
-    } else {
-        for record in records.unwrap() {
-            println!("{:?}", record);
-        }
+    }
+
+    let records = records.unwrap();
+    validate_file(&records);
+    for record in records {
+        println!("{:?}", record);
     }
 }
 
@@ -91,6 +93,34 @@ fn read_file(path: &Path) -> Result<Vec<Record>, ReadError> {
         Result::Ok(records)
     } else {
         Result::Err(errors.into_iter().next().unwrap())
+    }
+}
+
+/// Validate that the rows in the input file are naturally in increasing date order
+fn validate_file(records: &Vec<Record>) -> () {
+    let errors: Vec<String> = (1..records.len())
+        .filter_map(|i| {
+            if records[i - 1]
+                .date
+                .signed_duration_since(records[i].date)
+                .num_days()
+                < 0
+            {
+                None
+            } else {
+                Some(format!(
+                    "Date for row {} is the same or later than the date for row {}",
+                    records[i - 1].date,
+                    records[i].date
+                ))
+            }
+        })
+        .collect();
+    if !errors.is_empty() {
+        panic!(format!(
+            "Found issues in data read from file: \n{}",
+            errors.join("\n")
+        ));
     }
 }
 
