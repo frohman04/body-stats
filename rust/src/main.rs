@@ -1,14 +1,17 @@
 extern crate calamine;
 use calamine::{open_workbook, DeError, RangeDeserializerBuilder, Reader, Xlsx, XlsxError};
 
+extern crate chrono;
+use chrono::prelude::*;
+
 extern crate clap;
 use clap::{App, Arg};
 
-extern crate serde;
-use serde::Deserialize;
-
 extern crate tempfile;
 use tempfile::NamedTempFile;
+
+extern crate time;
+use time::Duration;
 
 use std::fs::{copy, remove_file};
 use std::path::Path;
@@ -50,10 +53,35 @@ fn read_file(path: &Path) -> Result<Vec<Record>, ReadError> {
         .worksheet_range("Weight")
         .ok_or_else(|| DeError::Custom("Unable to find sheet Weight".to_string()))??;
 
-    let iter = RangeDeserializerBuilder::new().from_range(&range)?;
+    let mut iter = RangeDeserializerBuilder::new().from_range(&range)?;
 
+    iter.next(); // skip first row
+    let epoch = Local.ymd(1899, 12, 30);
     let (records, errors): (Vec<_>, Vec<_>) = iter
-        .map(|row| row.map(Record::from).map_err(ReadError::from))
+        .map(|row| {
+            row.map(|x| {
+                let (days_since_epoch, _, weight, fat_weight, pct_fat, pct_water, pct_bone, bmi): (
+                    f32,
+                    Option<f32>,
+                    Option<f32>,
+                    Option<f32>,
+                    Option<f32>,
+                    Option<f32>,
+                    Option<f32>,
+                    Option<f32>,
+                ) = x;
+                Record {
+                    date: epoch + Duration::days(days_since_epoch as i64),
+                    weight,
+                    fat_weight,
+                    pct_fat,
+                    pct_water,
+                    pct_bone,
+                    bmi,
+                }
+            })
+            .map_err(ReadError::from)
+        })
         .partition(Result::is_ok);
     let records: Vec<Record> = records.into_iter().map(Result::unwrap).collect();
     let errors: Vec<ReadError> = errors.into_iter().map(Result::unwrap_err).collect();
@@ -91,9 +119,9 @@ impl From<DeError> for ReadError {
     }
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Debug)]
 struct Record {
-    date: i32,
+    date: Date<Local>,
     weight: Option<f32>,
     fat_weight: Option<f32>,
     pct_fat: Option<f32>,
