@@ -40,7 +40,8 @@ fn main() {
 
     let records = records.unwrap();
     validate_file(&records);
-    for record in records {
+    let raw_weights = weight_raw_series(&records);
+    for record in raw_weights {
         println!("{:?}", record);
     }
 }
@@ -124,6 +125,19 @@ fn validate_file(records: &Vec<Record>) -> () {
     }
 }
 
+/// Calculate the data points for the raw weight series.
+fn weight_raw_series(records: &Vec<Record>) -> Vec<DataPoint> {
+    records
+        .into_iter()
+        .filter_map(|r| {
+            r.weight.map(|w| DataPoint {
+                date: r.date.format("%Y-%m-%d").to_string(),
+                value: w,
+            })
+        })
+        .collect()
+}
+
 #[derive(Debug)]
 enum ReadError {
     Io { err: std::io::Error },
@@ -158,4 +172,10 @@ struct Record {
     pct_water: Option<f32>,
     pct_bone: Option<f32>,
     bmi: Option<f32>,
+}
+
+#[derive(Debug)]
+struct DataPoint {
+    date: String,
+    value: f32,
 }
