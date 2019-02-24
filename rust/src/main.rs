@@ -1,12 +1,16 @@
 extern crate calamine;
 extern crate chrono;
 extern crate clap;
+#[macro_use]
+extern crate log;
+extern crate simplelog;
 extern crate tempfile;
 extern crate time;
 
 use calamine::{open_workbook, DeError, RangeDeserializerBuilder, Reader, Xlsx, XlsxError};
 use chrono::prelude::*;
 use clap::{App, Arg};
+use simplelog::{CombinedLogger, Config, LevelFilter, TermLogger};
 use tempfile::NamedTempFile;
 use time::Duration;
 
@@ -17,6 +21,11 @@ mod regression;
 use regression::SimpleRegression;
 
 fn main() {
+    CombinedLogger::init(vec![
+        TermLogger::new(LevelFilter::Info, Config::default()).unwrap()
+    ])
+    .unwrap();
+
     let matches = App::new("body-graphs")
         .version("0.1")
         .author("Chris Lieb")
@@ -31,8 +40,6 @@ fn main() {
         panic!("Argument <file> ({}) is not a file", raw_input_path);
     }
 
-    println!("{}", raw_input_path);
-
     let records = read_file(&input_path);
     if records.is_err() {
         panic!(format!("{:?}", records.unwrap_err()));
@@ -45,6 +52,8 @@ fn main() {
 
 /// Read the *.xlsx file and convert it into records.
 fn read_file(path: &Path) -> Result<Vec<Record>, ReadError> {
+    info!("Reading from file: {}", path.to_str().unwrap());
+
     let temp_file = NamedTempFile::new()?;
     copy(path, temp_file.path())?;
 
@@ -55,7 +64,7 @@ fn read_file(path: &Path) -> Result<Vec<Record>, ReadError> {
 
     let iter = RangeDeserializerBuilder::new().from_range(&range)?;
 
-    let epoch = Local.ymd(1899, 12, 30);
+    let epoch = Local.ymd(1899, 12, 30); // Excel epoch
     let (records, errors): (Vec<_>, Vec<_>) = iter
         .map(|row| {
             row.map(|x| {
