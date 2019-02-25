@@ -64,7 +64,7 @@ fn read_file(path: &Path) -> Result<Vec<Record>, ReadError> {
 
     let iter = RangeDeserializerBuilder::new().from_range(&range)?;
 
-    let epoch = Local.ymd(1899, 12, 30); // Excel epoch
+    let epoch = Utc.ymd(1899, 12, 30); // Excel epoch
     let (records, errors): (Vec<_>, Vec<_>) = iter
         .map(|row| {
             row.map(|x| {
@@ -332,7 +332,7 @@ impl From<DeError> for ReadError {
 
 #[derive(Debug)]
 struct Record {
-    date: Date<Local>,
+    date: Date<Utc>,
     weight: Option<f32>,
     fat_weight: Option<f32>,
     pct_fat: Option<f32>,
