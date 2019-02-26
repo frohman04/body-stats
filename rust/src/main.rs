@@ -7,6 +7,10 @@ extern crate simplelog;
 extern crate tempfile;
 extern crate time;
 
+mod regression;
+#[macro_use]
+mod timed;
+
 use calamine::{open_workbook, DeError, RangeDeserializerBuilder, Reader, Xlsx, XlsxError};
 use chrono::prelude::*;
 use clap::{App, Arg};
@@ -17,7 +21,6 @@ use time::Duration;
 use std::fs::{copy, remove_file, write};
 use std::path::Path;
 
-mod regression;
 use regression::SimpleRegression;
 
 fn main() {
@@ -40,14 +43,20 @@ fn main() {
         panic!("Argument <file> ({}) is not a file", raw_input_path);
     }
 
-    let records = read_file(&input_path);
-    if records.is_err() {
-        panic!(format!("{:?}", records.unwrap_err()));
-    }
+    let records = timed!(
+        "Reading file",
+        (|| {
+            let records = read_file(&input_path);
+            if records.is_err() {
+                panic!(format!("{:?}", records.unwrap_err()));
+            }
 
-    let records = records.unwrap();
-    validate_file(&records);
-    draw_weight_graph(&records);
+            let records = records.unwrap();
+            validate_file(&records);
+            records
+        })
+    );
+    timed!("Drawing graph", (|| draw_weight_graph(&records)));
 }
 
 /// Read the *.xlsx file and convert it into records.
@@ -132,9 +141,18 @@ fn validate_file(records: &Vec<Record>) -> () {
 
 /// Render a graph of weight data to HTML
 fn draw_weight_graph(records: &Vec<Record>) -> () {
-    let raw = weight_raw_series(records);
-    let average = weight_average_series(records, 30);
-    let loess = weight_loess_series(records, 30);
+    let raw = timed!(
+        "Calculating raw weight series",
+        (|| weight_raw_series(records))
+    );
+    let average = timed!(
+        "Calculating average weight series",
+        (|| weight_average_series(records, 30))
+    );
+    let loess = timed!(
+        "Calculating LOESS weight series",
+        (|| weight_loess_series(records, 30))
+    );
 
     let raw_dates: Vec<&str> = raw.iter().map(|p| p.date.as_str()).collect();
     let raw_values: Vec<String> = raw.iter().map(|p| p.value.to_string()).collect();
