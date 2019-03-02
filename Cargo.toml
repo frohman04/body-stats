@@ -1,0 +1,14 @@
+[package]
+name = "body-graphs"
+version = "0.1.0"
+authors = ["Chris Lieb <chris.lieb@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+calamine = "~0.15"
+chrono = "~0.4"
+clap = "~2.32"
+log = "~0.4"
+simplelog = "~0.5"
+tempfile = "~3.0"
+time = "~0.1"
