@@ -46,13 +46,25 @@ fn main() {
     let records = timed!(
         "Reading file",
         (|| {
-            let records = read_file(&input_path);
-            if records.is_err() {
-                panic!(format!("{:?}", records.unwrap_err()));
+            let records_result = read_file(&input_path);
+            if records_result.is_err() {
+                panic!(format!("{:?}", records_result.unwrap_err()));
             }
 
-            let records = records.unwrap();
+            let records = records_result.unwrap();
             validate_file(&records);
+
+            info!(
+                "Read {} records covering {} days",
+                records.len(),
+                records
+                    .last()
+                    .unwrap()
+                    .date
+                    .signed_duration_since(records[0].date)
+                    .num_days()
+            );
+
             records
         })
     );
