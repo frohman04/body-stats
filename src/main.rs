@@ -178,7 +178,7 @@ fn draw_weight_graph(records: &Vec<Record>) -> () {
 <html>
     <head>
         <title>Weight History</title>
-        <script src=\"https://cdn.plot.ly/plotly-1.41.3.min.js\"></script>
+        <script src=\"https://cdn.plot.ly/plotly-1.43.0.min.js\"></script>
     </head>
     <body>
         <div id=\"chart\"></div>
