@@ -1,0 +1,6 @@
+[bans]
+multiple_versions = "deny"
+skip = [
+	# rand_core depends on a newer version of itself...
+	{ name = "rand_core", version = "=0.3.1" }
+]
