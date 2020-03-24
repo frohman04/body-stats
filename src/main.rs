@@ -1,3 +1,5 @@
+#![forbid(unsafe_code)]
+
 extern crate calamine;
 extern crate chrono;
 extern crate clap;
