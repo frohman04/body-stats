@@ -16,7 +16,7 @@ mod timed;
 use calamine::{open_workbook, DeError, RangeDeserializerBuilder, Reader, Xlsx, XlsxError};
 use chrono::prelude::*;
 use clap::{App, Arg};
-use simplelog::{CombinedLogger, Config, LevelFilter, TermLogger};
+use simplelog::{CombinedLogger, Config, LevelFilter, TermLogger, TerminalMode};
 use tempfile::NamedTempFile;
 use time::Duration;
 
@@ -26,9 +26,11 @@ use std::path::Path;
 use regression::SimpleRegression;
 
 fn main() {
-    CombinedLogger::init(vec![
-        TermLogger::new(LevelFilter::Info, Config::default()).unwrap()
-    ])
+    CombinedLogger::init(vec![TermLogger::new(
+        LevelFilter::Info,
+        Config::default(),
+        TerminalMode::Stderr,
+    )])
     .unwrap();
 
     let matches = App::new("body-graphs")
