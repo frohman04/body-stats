@@ -1,12 +1,12 @@
 #![forbid(unsafe_code)]
 
 extern crate calamine;
-extern crate chrono;
 extern crate clap;
 #[macro_use]
 extern crate log;
 extern crate simplelog;
 extern crate tempfile;
+#[macro_use]
 extern crate time;
 
 mod regression;
@@ -14,11 +14,10 @@ mod regression;
 mod timed;
 
 use calamine::{open_workbook, DeError, RangeDeserializerBuilder, Reader, Xlsx, XlsxError};
-use chrono::prelude::*;
 use clap::{App, Arg};
 use simplelog::{CombinedLogger, Config, LevelFilter, TermLogger, TerminalMode};
 use tempfile::NamedTempFile;
-use time::Duration;
+use time::{Date, Duration};
 
 use std::fs::{copy, remove_file, write};
 use std::path::Path;
@@ -61,12 +60,7 @@ fn main() {
             info!(
                 "Read {} records covering {} days",
                 records.len(),
-                records
-                    .last()
-                    .unwrap()
-                    .date
-                    .signed_duration_since(records[0].date)
-                    .num_days()
+                (records.last().unwrap().date - records[0].date).whole_days()
             );
 
             records
@@ -89,7 +83,7 @@ fn read_file(path: &Path) -> Result<Vec<Record>, ReadError> {
 
     let iter = RangeDeserializerBuilder::new().from_range(&range)?;
 
-    let epoch = Utc.ymd(1899, 12, 30); // Excel epoch
+    let epoch = date!(1899 - 12 - 30); // Excel epoch
     let (records, errors): (Vec<_>, Vec<_>) = iter
         .map(|row| {
             row.map(|x| {
@@ -131,12 +125,7 @@ fn read_file(path: &Path) -> Result<Vec<Record>, ReadError> {
 fn validate_file(records: &Vec<Record>) -> () {
     let errors: Vec<String> = (1..records.len())
         .filter_map(|i| {
-            if records[i - 1]
-                .date
-                .signed_duration_since(records[i].date)
-                .num_days()
-                < 0
-            {
+            if (records[i - 1].date - records[i].date).whole_days() < 0 {
                 None
             } else {
                 Some(format!(
@@ -262,22 +251,12 @@ fn weight_average_series(records: &Vec<Record>, num_days: i64) -> Vec<DataPoint>
             let mut sum: f64 = 0f64;
 
             let mut i = lower_init;
-            while lower_bound
-                .signed_duration_since(records[i].date)
-                .num_days()
-                > 0
-            {
+            while (lower_bound - records[i].date).whole_days() > 0 {
                 i += 1;
             }
             lower_init = i;
 
-            while i < records.len()
-                && records[i]
-                    .date
-                    .signed_duration_since(upper_bound)
-                    .num_days()
-                    <= 0
-            {
+            while i < records.len() && (records[i].date - upper_bound).whole_days() <= 0 {
                 count += 1;
                 sum += records[i].weight.unwrap() as f64;
                 i += 1;
@@ -307,24 +286,14 @@ fn weight_loess_series(records: &Vec<Record>, num_days: i64) -> Vec<DataPoint> {
             let mut regression = SimpleRegression::new();
 
             let mut i = lower_init;
-            while lower_bound
-                .signed_duration_since(records[i].date)
-                .num_days()
-                > 0
-            {
+            while (lower_bound - records[i].date).whole_days() > 0 {
                 i += 1;
             }
             lower_init = i;
 
-            while i < records.len()
-                && records[i]
-                    .date
-                    .signed_duration_since(upper_bound)
-                    .num_days()
-                    <= 0
-            {
+            while i < records.len() && (records[i].date - upper_bound).whole_days() <= 0 {
                 regression.add_data(
-                    records[i].date.signed_duration_since(base_date).num_days() as f64,
+                    (records[i].date - base_date).whole_days() as f64,
                     records[i].weight.unwrap() as f64,
                 );
                 i += 1;
@@ -332,8 +301,7 @@ fn weight_loess_series(records: &Vec<Record>, num_days: i64) -> Vec<DataPoint> {
 
             DataPoint {
                 date: r.date.format("%Y-%m-%d").to_string(),
-                value: regression
-                    .predict(r.date.signed_duration_since(base_date).num_days() as f64),
+                value: regression.predict((r.date - base_date).whole_days() as f64),
             }
         })
         .collect()
@@ -366,7 +334,7 @@ impl From<DeError> for ReadError {
 
 #[derive(Debug)]
 struct Record {
-    date: Date<Utc>,
+    date: Date,
     weight: Option<f32>,
     fat_weight: Option<f32>,
     pct_fat: Option<f32>,
