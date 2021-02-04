@@ -5,7 +5,7 @@ authors = ["Chris Lieb <chris.lieb@gmail.com>"]
 edition = "2018"
 
 [dependencies]
-calamine = "~0.16"
+calamine = "~0.17"
 clap = "~2.33"
 log = "~0.4"
 simplelog = "~0.9"
