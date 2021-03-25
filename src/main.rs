@@ -51,7 +51,7 @@ fn main() {
         (|| {
             let records_result = read_file(&input_path);
             if records_result.is_err() {
-                panic!(format!("{:?}", records_result.unwrap_err()));
+                panic!("{:?}", records_result.unwrap_err());
             }
 
             let records = records_result.unwrap();
@@ -137,10 +137,10 @@ fn validate_file(records: &Vec<Record>) -> () {
         })
         .collect();
     if !errors.is_empty() {
-        panic!(format!(
+        panic!(
             "Found issues in data read from file: \n{}",
             errors.join("\n")
-        ));
+        );
     }
 }
 
