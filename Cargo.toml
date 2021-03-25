@@ -3,6 +3,7 @@ name = "body-graphs"
 version = "0.1.0"
 authors = ["Chris Lieb <chris.lieb@gmail.com>"]
 edition = "2018"
+resolver = "2"
 
 [dependencies]
 calamine = "~0.18"
