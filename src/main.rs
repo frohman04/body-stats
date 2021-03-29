@@ -15,7 +15,7 @@ mod timed;
 
 use calamine::{open_workbook, DeError, RangeDeserializerBuilder, Reader, Xlsx, XlsxError};
 use clap::{App, Arg};
-use simplelog::{CombinedLogger, Config, LevelFilter, TermLogger, TerminalMode};
+use simplelog::{ColorChoice, CombinedLogger, Config, LevelFilter, TermLogger, TerminalMode};
 use tempfile::NamedTempFile;
 use time::{Date, Duration};
 
@@ -29,6 +29,7 @@ fn main() {
         LevelFilter::Info,
         Config::default(),
         TerminalMode::Stderr,
+        ColorChoice::Auto,
     )])
     .unwrap();
 
@@ -51,7 +52,7 @@ fn main() {
         (|| {
             let records_result = read_file(&input_path);
             if records_result.is_err() {
-                panic!(format!("{:?}", records_result.unwrap_err()));
+                panic!("{:?}", records_result.unwrap_err());
             }
 
             let records = records_result.unwrap();
@@ -137,10 +138,10 @@ fn validate_file(records: &Vec<Record>) -> () {
         })
         .collect();
     if !errors.is_empty() {
-        panic!(format!(
+        panic!(
             "Found issues in data read from file: \n{}",
             errors.join("\n")
-        ));
+        );
     }
 }
 
