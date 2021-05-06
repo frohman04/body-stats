@@ -1,5 +1,3 @@
-use std::f64;
-
 /// A simple linear regression calculator.  Based on Java commons-math3 3.6.1 SimpleRegression.
 pub struct SimpleRegression {
     /// Sum of x values
@@ -44,22 +42,20 @@ impl SimpleRegression {
     /// the Sample Variance: Analysis and Recommendations", Chan, T.F., Golub, G.H., and
     /// LeVeque, R.J. 1983, American Statistician, vol. 37, pp. 242-247, referenced in Weisberg, S.
     /// "Applied Linear Regression". 2nd Ed. 1985.
-    pub fn add_data(&mut self, x: f64, y: f64) -> () {
+    pub fn add_data(&mut self, x: f64, y: f64) {
         if self.n == 0 {
             self.x_bar = x;
             self.y_bar = y;
-        } else {
-            if self.has_intercept {
-                let fact1 = 1f64 + self.n as f64;
-                let fact2 = self.n as f64 / (1f64 + self.n as f64);
-                let dx = x - self.x_bar;
-                let dy = y - self.y_bar;
-                self.sum_xx += dx * dx * fact2;
-                self.sum_yy += dy * dy * fact2;
-                self.sum_xy += dx * dy * fact2;
-                self.x_bar += dx / fact1;
-                self.y_bar += dy / fact1;
-            }
+        } else if self.has_intercept {
+            let fact1 = 1f64 + self.n as f64;
+            let fact2 = self.n as f64 / (1f64 + self.n as f64);
+            let dx = x - self.x_bar;
+            let dy = y - self.y_bar;
+            self.sum_xx += dx * dx * fact2;
+            self.sum_yy += dy * dy * fact2;
+            self.sum_xy += dx * dy * fact2;
+            self.x_bar += dx / fact1;
+            self.y_bar += dy / fact1;
         }
         if !self.has_intercept {
             self.sum_xx += x * x;
@@ -97,10 +93,11 @@ impl SimpleRegression {
     /// been added before invoking this method.  If this method is invoked before a model can be
     /// estimated, NaN is returned.
     fn get_slope(&self) -> f64 {
-        if self.n < 2 {
-            f64::NAN // not enough data
-        } else if self.sum_xx.abs() < 10f64 * f64::MIN {
-            f64::NAN // not enough variation in x
+        if self.n < 2 || // not enough data
+            self.sum_xx.abs() < 10f64 * f64::MIN
+        // not enough variation in x
+        {
+            f64::NAN
         } else {
             self.sum_xy / self.sum_xx
         }

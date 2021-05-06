@@ -88,6 +88,7 @@ fn read_file(path: &Path) -> Result<Vec<Record>, ReadError> {
     let (records, errors): (Vec<_>, Vec<_>) = iter
         .map(|row| {
             row.map(|x| {
+                #[allow(clippy::type_complexity)]
                 let (days_since_epoch, _, weight, fat_weight, pct_fat, pct_water, pct_bone, bmi): (
                     f32,
                     Option<f32>,
@@ -123,7 +124,7 @@ fn read_file(path: &Path) -> Result<Vec<Record>, ReadError> {
 }
 
 /// Validate that the rows in the input file are naturally in increasing date order
-fn validate_file(records: &Vec<Record>) -> () {
+fn validate_file(records: &[Record]) {
     let errors: Vec<String> = (1..records.len())
         .filter_map(|i| {
             if (records[i - 1].date - records[i].date).whole_days() < 0 {
@@ -146,7 +147,7 @@ fn validate_file(records: &Vec<Record>) -> () {
 }
 
 /// Render a graph of weight data to HTML
-fn draw_weight_graph(records: &Vec<Record>) -> () {
+fn draw_weight_graph(records: &[Record]) {
     let raw = timed!(
         "Calculating raw weight series",
         (|| weight_raw_series(records))
@@ -224,12 +225,12 @@ fn draw_weight_graph(records: &Vec<Record>) -> () {
 }
 
 /// Calculate the data points for the raw weight series.
-fn weight_raw_series(records: &Vec<Record>) -> Vec<DataPoint> {
+fn weight_raw_series(records: &[Record]) -> Vec<DataPoint> {
     records
-        .into_iter()
+        .iter()
         .filter_map(|r| {
             r.weight.map(|w| DataPoint {
-                date: r.date.format("%Y-%m-%d").to_string(),
+                date: r.date.format("%Y-%m-%d"),
                 value: w as f64,
             })
         })
@@ -237,8 +238,8 @@ fn weight_raw_series(records: &Vec<Record>) -> Vec<DataPoint> {
 }
 
 /// Calculate the data points for the rolling average weight series.
-fn weight_average_series(records: &Vec<Record>, num_days: i64) -> Vec<DataPoint> {
-    let records: Vec<&Record> = records.into_iter().filter(|r| r.weight.is_some()).collect();
+fn weight_average_series(records: &[Record], num_days: i64) -> Vec<DataPoint> {
+    let records: Vec<&Record> = records.iter().filter(|r| r.weight.is_some()).collect();
 
     let mut lower_init = 0;
 
@@ -264,7 +265,7 @@ fn weight_average_series(records: &Vec<Record>, num_days: i64) -> Vec<DataPoint>
             }
 
             DataPoint {
-                date: r.date.format("%Y-%m-%d").to_string(),
+                date: r.date.format("%Y-%m-%d"),
                 value: sum / (count as f64),
             }
         })
@@ -272,8 +273,8 @@ fn weight_average_series(records: &Vec<Record>, num_days: i64) -> Vec<DataPoint>
 }
 
 /// Calculate the data points for the LOESS regression weight series.
-fn weight_loess_series(records: &Vec<Record>, num_days: i64) -> Vec<DataPoint> {
-    let records: Vec<&Record> = records.into_iter().filter(|r| r.weight.is_some()).collect();
+fn weight_loess_series(records: &[Record], num_days: i64) -> Vec<DataPoint> {
+    let records: Vec<&Record> = records.iter().filter(|r| r.weight.is_some()).collect();
 
     let base_date = records.iter().map(|r| r.date).min().unwrap();
     let mut lower_init = 0;
@@ -301,7 +302,7 @@ fn weight_loess_series(records: &Vec<Record>, num_days: i64) -> Vec<DataPoint> {
             }
 
             DataPoint {
-                date: r.date.format("%Y-%m-%d").to_string(),
+                date: r.date.format("%Y-%m-%d"),
                 value: regression.predict((r.date - base_date).whole_days() as f64),
             }
         })
