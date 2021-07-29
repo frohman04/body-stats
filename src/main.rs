@@ -50,7 +50,7 @@ fn main() {
     let records = timed!(
         "Reading file",
         (|| {
-            let records_result = read_file(&input_path);
+            let records_result = read_file(input_path);
             if records_result.is_err() {
                 panic!("{:?}", records_result.unwrap_err());
             }
