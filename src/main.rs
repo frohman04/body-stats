@@ -6,7 +6,6 @@ extern crate clap;
 extern crate log;
 extern crate simplelog;
 extern crate tempfile;
-#[macro_use]
 extern crate time;
 
 mod regression;
@@ -17,6 +16,7 @@ use calamine::{open_workbook, DeError, RangeDeserializerBuilder, Reader, Xlsx, X
 use clap::{App, Arg};
 use simplelog::{ColorChoice, CombinedLogger, Config, LevelFilter, TermLogger, TerminalMode};
 use tempfile::NamedTempFile;
+use time::macros::{date, format_description};
 use time::{Date, Duration};
 
 use std::fs::{copy, remove_file, write};
@@ -230,7 +230,7 @@ fn weight_raw_series(records: &[Record]) -> Vec<DataPoint> {
         .iter()
         .filter_map(|r| {
             r.weight.map(|w| DataPoint {
-                date: r.date.format("%Y-%m-%d"),
+                date: r.date.format(&format_description!("%Y-%m-%d")).unwrap(),
                 value: w as f64,
             })
         })
@@ -265,7 +265,7 @@ fn weight_average_series(records: &[Record], num_days: i64) -> Vec<DataPoint> {
             }
 
             DataPoint {
-                date: r.date.format("%Y-%m-%d"),
+                date: r.date.format(&format_description!("%Y-%m-%d")).unwrap(),
                 value: sum / (count as f64),
             }
         })
@@ -302,7 +302,7 @@ fn weight_loess_series(records: &[Record], num_days: i64) -> Vec<DataPoint> {
             }
 
             DataPoint {
-                date: r.date.format("%Y-%m-%d"),
+                date: r.date.format(&format_description!("%Y-%m-%d")).unwrap(),
                 value: regression.predict((r.date - base_date).whole_days() as f64),
             }
         })
