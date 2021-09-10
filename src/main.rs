@@ -230,7 +230,7 @@ fn weight_raw_series(records: &[Record]) -> Vec<DataPoint> {
         .iter()
         .filter_map(|r| {
             r.weight.map(|w| DataPoint {
-                date: r.date.format(&format_description!("%Y-%m-%d")).unwrap(),
+                date: r.date.format(&format_description!("[year]-[month]-[day]")).unwrap(),
                 value: w as f64,
             })
         })
@@ -265,7 +265,7 @@ fn weight_average_series(records: &[Record], num_days: i64) -> Vec<DataPoint> {
             }
 
             DataPoint {
-                date: r.date.format(&format_description!("%Y-%m-%d")).unwrap(),
+                date: r.date.format(&format_description!("[year]-[month]-[day]")).unwrap(),
                 value: sum / (count as f64),
             }
         })
@@ -302,7 +302,7 @@ fn weight_loess_series(records: &[Record], num_days: i64) -> Vec<DataPoint> {
             }
 
             DataPoint {
-                date: r.date.format(&format_description!("%Y-%m-%d")).unwrap(),
+                date: r.date.format(&format_description!("[year]-[month]-[day]")).unwrap(),
                 value: regression.predict((r.date - base_date).whole_days() as f64),
             }
         })
