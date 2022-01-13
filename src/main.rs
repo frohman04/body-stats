@@ -36,7 +36,7 @@ fn main() {
     let matches = App::new("body-graphs")
         .version("0.1")
         .author("Chris Lieb")
-        .arg(Arg::with_name("<file>").required(true).index(1))
+        .arg(Arg::new("<file>").required(true).index(1))
         .get_matches();
     let raw_input_path = matches.value_of("<file>").unwrap();
     let input_path = Path::new(raw_input_path);
@@ -230,7 +230,10 @@ fn weight_raw_series(records: &[Record]) -> Vec<DataPoint> {
         .iter()
         .filter_map(|r| {
             r.weight.map(|w| DataPoint {
-                date: r.date.format(&format_description!("[year]-[month]-[day]")).unwrap(),
+                date: r
+                    .date
+                    .format(&format_description!("[year]-[month]-[day]"))
+                    .unwrap(),
                 value: w as f64,
             })
         })
@@ -265,7 +268,10 @@ fn weight_average_series(records: &[Record], num_days: i64) -> Vec<DataPoint> {
             }
 
             DataPoint {
-                date: r.date.format(&format_description!("[year]-[month]-[day]")).unwrap(),
+                date: r
+                    .date
+                    .format(&format_description!("[year]-[month]-[day]"))
+                    .unwrap(),
                 value: sum / (count as f64),
             }
         })
@@ -302,7 +308,10 @@ fn weight_loess_series(records: &[Record], num_days: i64) -> Vec<DataPoint> {
             }
 
             DataPoint {
-                date: r.date.format(&format_description!("[year]-[month]-[day]")).unwrap(),
+                date: r
+                    .date
+                    .format(&format_description!("[year]-[month]-[day]"))
+                    .unwrap(),
                 value: regression.predict((r.date - base_date).whole_days() as f64),
             }
         })
