@@ -13,7 +13,7 @@ mod regression;
 mod timed;
 
 use calamine::{open_workbook, DeError, RangeDeserializerBuilder, Reader, Xlsx, XlsxError};
-use clap::{App, Arg};
+use clap::{Arg, Command};
 use simplelog::{ColorChoice, CombinedLogger, Config, LevelFilter, TermLogger, TerminalMode};
 use tempfile::NamedTempFile;
 use time::macros::{date, format_description};
@@ -33,7 +33,7 @@ fn main() {
     )])
     .unwrap();
 
-    let matches = App::new("body-graphs")
+    let matches = Command::new("body-graphs")
         .version("0.1")
         .author("Chris Lieb")
         .arg(Arg::new("<file>").required(true).index(1))
@@ -318,6 +318,7 @@ fn weight_loess_series(records: &[Record], num_days: i64) -> Vec<DataPoint> {
         .collect()
 }
 
+#[allow(dead_code)]
 #[derive(Debug)]
 enum ReadError {
     Io { err: std::io::Error },
@@ -343,6 +344,7 @@ impl From<DeError> for ReadError {
     }
 }
 
+#[allow(dead_code)]
 #[derive(Debug)]
 struct Record {
     date: Date,
