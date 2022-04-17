@@ -2,9 +2,9 @@
 
 extern crate calamine;
 extern crate clap;
+extern crate env_logger;
 #[macro_use]
 extern crate log;
-extern crate simplelog;
 extern crate tempfile;
 extern crate time;
 
@@ -14,7 +14,7 @@ mod timed;
 
 use calamine::{open_workbook, DeError, RangeDeserializerBuilder, Reader, Xlsx, XlsxError};
 use clap::{Arg, Command};
-use simplelog::{ColorChoice, CombinedLogger, Config, LevelFilter, TermLogger, TerminalMode};
+use env_logger::Env;
 use tempfile::NamedTempFile;
 use time::macros::{date, format_description};
 use time::{Date, Duration};
@@ -25,13 +25,9 @@ use std::path::Path;
 use regression::SimpleRegression;
 
 fn main() {
-    CombinedLogger::init(vec![TermLogger::new(
-        LevelFilter::Info,
-        Config::default(),
-        TerminalMode::Stderr,
-        ColorChoice::Auto,
-    )])
-    .unwrap();
+    let env = Env::default()
+        .filter_or("MY_LOG_LEVEL", "info");
+    env_logger::init_from_env(env);
 
     let matches = Command::new("body-graphs")
         .version("0.1")
