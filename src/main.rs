@@ -25,8 +25,7 @@ use std::path::Path;
 use regression::SimpleRegression;
 
 fn main() {
-    let env = Env::default()
-        .filter_or("MY_LOG_LEVEL", "info");
+    let env = Env::default().filter_or("MY_LOG_LEVEL", "info");
     env_logger::init_from_env(env);
 
     let matches = Command::new("body-graphs")
@@ -34,7 +33,7 @@ fn main() {
         .author("Chris Lieb")
         .arg(Arg::new("<file>").required(true).index(1))
         .get_matches();
-    let raw_input_path = matches.value_of("<file>").unwrap();
+    let raw_input_path = matches.get_one::<String>("<file>").unwrap().as_str();
     let input_path = Path::new(raw_input_path);
 
     if !input_path.exists() {
