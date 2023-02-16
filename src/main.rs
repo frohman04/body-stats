@@ -37,9 +37,9 @@ fn main() {
     let input_path = Path::new(raw_input_path);
 
     if !input_path.exists() {
-        panic!("Argument <file> ({}) does not exist", raw_input_path);
+        panic!("Argument <file> ({raw_input_path}) does not exist");
     } else if !input_path.is_file() {
-        panic!("Argument <file> ({}) is not a file", raw_input_path);
+        panic!("Argument <file> ({raw_input_path}) is not a file");
     }
 
     let records = timed!(
