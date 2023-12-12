@@ -73,9 +73,7 @@ fn read_file(path: &Path) -> Result<Vec<Record>, ReadError> {
     copy(path, temp_file.path())?;
 
     let mut workbook: Xlsx<_> = open_workbook(&temp_file)?;
-    let range = workbook
-        .worksheet_range("Weight")
-        .ok_or_else(|| DeError::Custom("Unable to find sheet Weight".to_string()))??;
+    let range = workbook.worksheet_range("Weight")?;
 
     let iter = RangeDeserializerBuilder::new().from_range(&range)?;
 
