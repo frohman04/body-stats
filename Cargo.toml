@@ -5,7 +5,7 @@ authors = ["Chris Lieb <chris.lieb@gmail.com>"]
 edition = "2021"
 
 [dependencies]
-calamine = "~0.22"
+calamine = "~0.23"
 clap = "~4.4"
 env_logger = "~0.10.1"
 log = "~0.4"
