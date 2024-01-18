@@ -7,7 +7,7 @@ edition = "2021"
 [dependencies]
 calamine = "~0.23"
 clap = "~4.4"
-env_logger = "~0.10.1"
+env_logger = "~0.10.2"
 log = "~0.4"
 tempfile = "~3.9"
 time = { version="~0.3", features=["macros", "formatting"] }
