@@ -12,7 +12,7 @@ mod regression;
 #[macro_use]
 mod timed;
 
-use calamine::{open_workbook, DeError, RangeDeserializerBuilder, Reader, Xlsx, XlsxError};
+use calamine::{open_workbook, Data, DeError, RangeDeserializerBuilder, Reader, Xlsx, XlsxError};
 use clap::{Arg, Command};
 use env_logger::Env;
 use tempfile::NamedTempFile;
@@ -83,7 +83,7 @@ fn read_file(path: &Path) -> Result<Vec<Record>, ReadError> {
             row.map(|x| {
                 #[allow(clippy::type_complexity)]
                 let (days_since_epoch, _, weight, fat_weight, pct_fat, pct_water, pct_bone, bmi): (
-                    f32,
+                    Data,
                     Option<f32>,
                     Option<f32>,
                     Option<f32>,
@@ -92,14 +92,17 @@ fn read_file(path: &Path) -> Result<Vec<Record>, ReadError> {
                     Option<f32>,
                     Option<f32>,
                 ) = x;
-                Record {
-                    date: epoch + Duration::days(days_since_epoch as i64),
-                    weight,
-                    fat_weight,
-                    pct_fat,
-                    pct_water,
-                    pct_bone,
-                    bmi,
+                match days_since_epoch {
+                    Data::Float(edt) => Record {
+                        date: epoch + Duration::days(edt as i64),
+                        weight,
+                        fat_weight,
+                        pct_fat,
+                        pct_water,
+                        pct_bone,
+                        bmi,
+                    },
+                    x => panic!("Unexpected data type: {}", x),
                 }
             })
             .map_err(ReadError::from)
