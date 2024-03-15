@@ -17,11 +17,30 @@ jobs:
       with:
         toolchain: stable
         profile: minimal
-        components: clippy
+        components: clippy, rustfmt
+    - name: rustfmt
+      uses: actions-rs/cargo@v1
+      with:
+        command: fmt
+        args: --all -- --check
+    - name: cargo check
+      uses: actions-rs/cargo@v1
+      with:
+        command: check
+    - name: Clippy
+      uses: actions-rs/clippy-check@v1
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
     - name: Build
-      run: cargo build --verbose
+      uses: actions-rs/cargo@v1
+      with:
+        command: build
+        args: --verbose
     - name: Run tests
-      run: cargo test --verbose
+      uses: actions-rs/cargo@v1
+      with:
+        command: test
+        args: --verbose
     - name: Run program
       run: |
         cargo run test_stats.xlsx
