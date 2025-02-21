@@ -2,7 +2,7 @@
 name = "body-graphs"
 version = "0.1.0"
 authors = ["Chris Lieb <chris.lieb@gmail.com>"]
-edition = "2021"
+edition = "2024"
 
 [dependencies]
 calamine = "~0.26"
