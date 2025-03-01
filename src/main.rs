@@ -12,7 +12,7 @@ mod regression;
 #[macro_use]
 mod timed;
 
-use calamine::{open_workbook, Data, DeError, RangeDeserializerBuilder, Reader, Xlsx, XlsxError};
+use calamine::{Data, DeError, RangeDeserializerBuilder, Reader, Xlsx, XlsxError, open_workbook};
 use clap::{Arg, Command};
 use env_logger::Env;
 use tempfile::NamedTempFile;
