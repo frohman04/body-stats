@@ -102,7 +102,7 @@ fn read_file(path: &Path) -> Result<Vec<Record>, ReadError> {
                         pct_bone,
                         bmi,
                     },
-                    x => panic!("Unexpected data type: {}", x),
+                    x => panic!("Unexpected data type: {x}"),
                 }
             })
             .map_err(ReadError::from)
