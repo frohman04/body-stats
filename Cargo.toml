@@ -9,5 +9,5 @@ calamine = "~0.32"
 clap = "~4.5"
 env_logger = "~0.11.8"
 log = "~0.4"
-tempfile = "~3.23"
+tempfile = "~3.24"
 time = { version="~0.3", features=["macros", "formatting"] }
